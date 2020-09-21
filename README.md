@@ -6,7 +6,7 @@ ports works.
 ## Quick facts
 * it is free software licenced under the GPL
 * minimal usage of cpu and memory
-* runs under Linux, BSDs, MacOSX and Windows (see notes for compiling below)
+* runs under Linux (Including Android), BSDs, MacOSX and Windows (see notes for compiling below)
 * support for IPv4 and IPv6 connections
 * can be configured with configuration-file
 * supports connection with and without SSL/TLS
@@ -71,6 +71,18 @@ You also need the build-essential package.
 
 ```
 sudo apt-get install libssl-dev build-essential
+```
+
+### Android
+
+Install deps:
+```
+pkg install openssl build-essential argp
+```
+
+Compile with the android makefile:
+```
+make -f Makefile.Android
 ```
 
 ### other linux distros
