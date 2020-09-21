@@ -73,7 +73,7 @@ You also need the build-essential package.
 sudo apt-get install libssl-dev build-essential
 ```
 
-### Android
+### Android (Termux)
 
 Install deps:
 ```
