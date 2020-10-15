@@ -1,3 +1,5 @@
+xdccget
+
 # Object files
 *.o
 *.ko
@@ -30,3 +32,5 @@
 
 # Debug files
 *.dSYM/
+
+.idea/
