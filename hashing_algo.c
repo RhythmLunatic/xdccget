@@ -1,33 +1,36 @@
 #include <strings.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <openssl/md5.h>
 
 #include "hashing_algo.h"
 #include "file.h"
-#include "sph_md5.h"
+
+int md5_equal(unsigned char hash1[], unsigned char hash2[]) {
+	return memcmp(hash1, hash2, MD5_DIGEST_LENGTH) == 0;
+}
 
 void freeHashAlgo(HashAlgorithm *algo) {
     free(algo->ctx);
     free(algo);
 }
 
-static HashAlgorithm* createMD5SPH() {
+static HashAlgorithm* createMD5() {
     HashAlgorithm *md5 = (HashAlgorithm*) malloc(sizeof (HashAlgorithm));
-    sph_md5_context *md5_context = (sph_md5_context*) malloc(sizeof (sph_md5_context));
-    md5->hashType = MD5;
+    MD5_CTX *md5_context = (MD5_CTX*) malloc(sizeof (MD5_CTX));
+    md5->hashType = HashType_MD5;
     md5->ctx = (void*) md5_context;
-    md5->hashSize = MD5_SIZE;
-    md5->toString = md5_toString;
-    md5->equals = md5_equal_sph;
-    md5->init = md5_init_sph;
-    md5->update = md5_update_sph;
-    md5->final = md5_final_sph;
+    md5->hashSize = MD5_DIGEST_LENGTH;
+    md5->equals = md5_equal;
+    md5->init = MD5_Init;
+    md5->update = MD5_Update;
+    md5->final = MD5_Final;
     return md5;
 }
 
 HashAlgorithm* createHashAlgorithm(char *hashAlgorithm) {
     if (!strcmp("MD5", hashAlgorithm)) {
-        return createMD5SPH();
+        return createMD5();
     }
     else {
         return NULL;
@@ -36,29 +39,29 @@ HashAlgorithm* createHashAlgorithm(char *hashAlgorithm) {
 
 static void updateHash(void *buffer, unsigned int bytesRead, void *ctx) {
     HashAlgorithm *algo = (HashAlgorithm*) ctx;
-    algo->update(algo->ctx, (uchar*) buffer, bytesRead);
+    algo->update(algo->ctx, buffer, bytesRead);
 }
 
-void getHashFromFile(HashAlgorithm *algo, char *filename, uchar *hash) {
+void getHashFromFile(HashAlgorithm *algo, char *filename, unsigned char *hash) {
     algo->init(algo->ctx);
     readFile(filename, updateHash, algo);
-    algo->final(algo->ctx, hash);
+    algo->final(hash, algo->ctx);
 }
 
-void getHashFromStringIter(HashAlgorithm *algo, char *string, uchar *hash, int numIterations) {
+void getHashFromStringIter(HashAlgorithm *algo, char *string, unsigned char *hash, int numIterations) {
     int i = 0;
     algo->init(algo->ctx);
     for (i = 0; i < numIterations; i++) {
-        algo->update(algo->ctx, (uchar*) string, strlen(string));
+        algo->update(algo->ctx, (const void**)&string, strlen(string));
     }
-    algo->final(algo->ctx, hash);
+    algo->final(hash, algo->ctx);
 }
 
-void getHashFromString(HashAlgorithm *algo, char *string, uchar *hash) {
+void getHashFromString(HashAlgorithm *algo, char *string, unsigned char *hash) {
     getHashFromStringIter(algo, string, hash, 1);
 }
 
-static uchar hexCharToBin(char c) {
+static unsigned char hexCharToBin(char c) {
     if (c >= '0' && c <= '9') {
         return c - '0';
     } else if (c >= 'a' && c <= 'f') {
@@ -70,16 +73,16 @@ static uchar hexCharToBin(char c) {
     }
 }
 
-static uchar hexToBin(char c1, char c2) {
-    uchar temp = 0;
+static unsigned char hexToBin(char c1, char c2) {
+    unsigned char temp = 0;
     temp = hexCharToBin(c2);
     temp |= hexCharToBin(c1) << 4;
     return temp;
 }
 
-uchar* convertHashStringToBinary(HashAlgorithm *algo, char *hashString) {
+unsigned char* convertHashStringToBinary(HashAlgorithm *algo, char *hashString) {
    unsigned int i, j;
-    uchar *hashBinary = (uchar*) malloc(sizeof (uchar) * algo->hashSize);
+    unsigned char *hashBinary = (unsigned char*) malloc(sizeof (unsigned char) * algo->hashSize);
     for (i = 0, j = 0; i < algo->hashSize; i++, j += 2) {
         hashBinary[i] = hexToBin(hashString[j], hashString[j + 1]);
     }
